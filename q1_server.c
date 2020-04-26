@@ -117,12 +117,12 @@ int main(int argc, char* argv[]){
 		struct pollfd pfds[2]; 
 	    pfds[0].fd = clientSocket1;
 	    pfds[0].events = POLLIN; // Tell me when ready to read
-	    pfds[1].fd = clientSocket1;
+	    pfds[1].fd = clientSocket2;
 	    pfds[1].events = POLLIN; // Tell me when ready to read
 
 	    int num_events = poll(pfds, 2, -1);
 
-	    fprintf(stderr, "expectedSeqNumber:%d\ninBuffer:%d\n",expectedSeqNumber,inBufferSeqNumber);
+	    // fprintf(stderr, "expectedSeqNumber:%d\ninBuffer:%d\n",expectedSeqNumber,inBufferSeqNumber);
 	    if(pfds[0].revents&POLLIN){
 	    	// received data on channel 1
 
@@ -134,11 +134,13 @@ int main(int argc, char* argv[]){
 
 	    	p1->data[PACKET_SIZE]='\0';
 
-	    	fprintf(stderr, "GOTTEN1:%d %d\n",p1->seqNo, temp);
+	    	// fprintf(stderr, "GOTTEN1:%d %d\n",p1->seqNo, temp);
 
 	    	if(rand()<(((ll)RAND_MAX)*PDR)/100){
+		    	// pcktPrint(0, p1->seqNo, p1->size, 1);		    		
+
 	    		// packet drop
-	    		fprintf(stderr, "DROPPED PACKET 1\n");
+	    		// fprintf(stderr, "DROPPED PACKET 1\n");
 	    	}
 	    	else{
 		    	// write to outputfile
@@ -146,21 +148,22 @@ int main(int argc, char* argv[]){
 		    		expectedSeqNumber+=fwrite(p1->data, sizeof(char),p1->size, myFile);
 		    	}
 		    	else{
-		    		// TODO: buffer it
 		    		if(inBufferSeqNumber==-1){
 		    			inBufferSeqNumber=p1->seqNo;
 		    			strcpy(dataBuffer,p1->data);
 		    		}
 		    		else{
-			    		fprintf(stderr, "DROPPED PACKET 1: BUFFER FULL\n");
+			    		// fprintf(stderr, "DROPPED PACKET 1: BUFFER FULL\n");
 		    			toAck=0;
 		    		}
 		    	}
 
 		    	if(toAck){
+			    	pcktPrint(0, p1->seqNo, p1->size, 1);
 			    	// send ack
 			    	sendPacket = getAckPacket(p1);
 			    	send(clientSocket1,badSerialize(sendPacket),sizeof(packet),0);
+					ackPrint(1,sendPacket->seqNo,1);
 
 			    	if(p1->lastPacket)break;		    		
 		    	}
@@ -176,12 +179,14 @@ int main(int argc, char* argv[]){
 
 	    	p2->data[PACKET_SIZE]='\0';
 
-	    	fprintf(stderr, "GOTTEN2:%d %d\n",p2->seqNo, temp);
+	    	// fprintf(stderr, "GOTTEN2:%d %d\n",p2->seqNo, temp);
 
 
 	    	if(rand()<(((ll)RAND_MAX)*PDR)/100){
 	    		// packet drop
-	    		fprintf(stderr, "DROPPED PACKET 2\n");
+	    		// fprintf(stderr, "DROPPED PACKET 2\n");
+			    // pcktPrint(0, p2->seqNo, p2->size, 2);		    		
+
 	    	}
 	    	else{
 		    	// write to outputfile
@@ -189,21 +194,22 @@ int main(int argc, char* argv[]){
 		    		expectedSeqNumber+=fwrite(p2->data, sizeof(char),p2->size, myFile);
 		    	}
 		    	else{
-		    		// TODO: buffer it
 		    		if(inBufferSeqNumber==-1){
 		    			inBufferSeqNumber=p2->seqNo;
 		    			strcpy(dataBuffer,p2->data);
 		    		}
 		    		else{
-			    		fprintf(stderr, "DROPPED PACKET 2: BUFFER FULL\n");
+			    		// fprintf(stderr, "DROPPED PACKET 2: BUFFER FULL\n");
 		    			toAck=0;
 		    		}
 		    	}
 
 		    	if(toAck){
+			    	pcktPrint(0, p2->seqNo, p2->size, 2);		    		
 			    	// send ack
 			    	sendPacket = getAckPacket(p2);
 			    	send(clientSocket2,badSerialize(sendPacket),sizeof(packet),0);
+					ackPrint(2,sendPacket->seqNo,2);
 
 			    	if(p2->lastPacket)break;		    		
 		    	}

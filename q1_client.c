@@ -173,15 +173,18 @@ int main(int argc, char* argv[]){
 		else{
 			if(FD_ISSET(socket1, &readfds)){
 				// GOT ACK ON 1
-				char recvBuffer[BUFSIZE];
-				int bytesRecvd = recv (socket1, recvBuffer, BUFSIZE-1, 0);
+				char recvBuffer[BUFSIZE+1];
+				int bytesRecvd = recv (socket1, recvBuffer, BUFSIZE, 0);
 				if (bytesRecvd < 0)
 				{ printf ("Error while receiving data from server");
 					exit (0);
 				}
 				recvBuffer[bytesRecvd] = '\0';
 
+
+
 				packet *ackPacket = badUnSerialize(recvBuffer);
+				ackPrint(0,ackPacket->seqNo,1);
 				if(ackPacket->ack && ackPacket->seqNo==p1->seqNo){
 
 					if(ackPacket->lastPacket)break;
@@ -207,8 +210,8 @@ int main(int argc, char* argv[]){
 			if (FD_ISSET(socket2, &readfds)){
 				// fprintf(stderr, "HIHIHI");
 				// GOT ACK ON 2
-				char recvBuffer[BUFSIZE];
-				int bytesRecvd = recv (socket2, recvBuffer, BUFSIZE-1, 0);
+				char recvBuffer[BUFSIZE+1];
+				int bytesRecvd = recv (socket2, recvBuffer, BUFSIZE, 0);
 				if (bytesRecvd < 0)
 				{ printf ("Error while receiving data from server");
 					exit (0);
@@ -216,6 +219,9 @@ int main(int argc, char* argv[]){
 				recvBuffer[bytesRecvd] = '\0';
 
 				packet *ackPacket = badUnSerialize(recvBuffer);
+
+				ackPrint(0,ackPacket->seqNo,2);
+
 				if(ackPacket->ack && ackPacket->seqNo==p2->seqNo){
 
 					if(ackPacket->lastPacket)break;

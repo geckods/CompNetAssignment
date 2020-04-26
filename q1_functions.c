@@ -73,10 +73,19 @@ packet *getAckPacket(packet* iPacket){
 }
 
 void pcktPrint(int sent, int seqNo, int size, int channel){
-	// if(sent){
-	// 	printf("SENT PKT: Seq. No %d of size %d bytes from channel %d.\n",seqNo,size,channel);
-	// }
-	// else{
-	// 	printf("RCVD PKT: Seq. No %d of size %d bytes from channel %d.\n",seqNo,size,channel);		
-	// }
+	if(sent){
+		printf("SENT PKT: Seq. No %d of size %d bytes from channel %d.\n",seqNo,size,channel);
+	}
+	else{
+		printf("RCVD PKT: Seq. No %d of size %d bytes from channel %d.\n",seqNo,size,channel);		
+	}
+}
+
+void ackPrint(int sent, int seqNo, int channel){
+	if(sent){
+		printf("SENT ACK: For PKT with Seq. No %d from channel %d.\n",seqNo,channel);
+	}
+	else{
+		printf("RCVD ACK: For PKT with Seq. No %d from channel %d.\n",seqNo,channel);
+	}
 }
