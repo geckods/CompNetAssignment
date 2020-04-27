@@ -31,7 +31,7 @@
 #define MAXPENDING 10
 #define PORT1 12345
 #define PORT2 12346
-#define PDR 70
+#define PDR 10
 
 int BUFSIZE = PACKET_SIZE + 24;
 

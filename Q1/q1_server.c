@@ -136,7 +136,7 @@ int main(int argc, char* argv[]){
 
 	    	// fprintf(stderr, "GOTTEN1:%d %d\n",p1->seqNo, temp);
 
-	    	if(rand()<(((ll)RAND_MAX)*PDR)/100){
+	    	if(dropPacket()){
 		    	// pcktPrint(0, p1->seqNo, p1->size, 1);		    		
 
 	    		// packet drop
@@ -182,7 +182,7 @@ int main(int argc, char* argv[]){
 	    	// fprintf(stderr, "GOTTEN2:%d %d\n",p2->seqNo, temp);
 
 
-	    	if(rand()<(((ll)RAND_MAX)*PDR)/100){
+	    	if(dropPacket()){
 	    		// packet drop
 	    		// fprintf(stderr, "DROPPED PACKET 2\n");
 			    // pcktPrint(0, p2->seqNo, p2->size, 2);		    		

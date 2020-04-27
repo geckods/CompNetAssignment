@@ -89,3 +89,7 @@ void ackPrint(int sent, int seqNo, int channel){
 		printf("RCVD ACK: For PKT with Seq. No %d from channel %d.\n",seqNo,channel);
 	}
 }
+
+int dropPacket(){
+	return rand()<((RAND_MAX)*(((double)PDR)/100));
+}

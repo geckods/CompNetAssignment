@@ -189,14 +189,16 @@ int main(int argc, char* argv[]){
 
 					if(ackPacket->lastPacket)break;
 
-					p1=getNextPacket(myFile,1);
-					sentLastPacket=p1->lastPacket;
+					if(!sentLastPacket){
+						p1=getNextPacket(myFile,1);
+						sentLastPacket=p1->lastPacket;
 
-					int bytesSent = send (socket1, badSerialize(p1), sizeof(packet), 0);
-					pcktPrint(1,p1->seqNo, p1->size,1);
-					if (bytesSent != sizeof(packet))
-					{ printf("Error while sending the message channel 1");
-						exit(0);
+						int bytesSent = send (socket1, badSerialize(p1), sizeof(packet), 0);
+						pcktPrint(1,p1->seqNo, p1->size,1);
+						if (bytesSent != sizeof(packet))
+						{ printf("Error while sending the message channel 1");
+							exit(0);
+						}						
 					}
 					// printf ("Data Sent\n");
 
@@ -226,14 +228,16 @@ int main(int argc, char* argv[]){
 
 					if(ackPacket->lastPacket)break;
 
-					p2=getNextPacket(myFile,2);
-					sentLastPacket=p2->lastPacket;
+					if(!sentLastPacket){
+						p2=getNextPacket(myFile,2);
+						sentLastPacket=p2->lastPacket;
 
-					int bytesSent = send (socket2, badSerialize(p2), sizeof(packet), 0);
-					pcktPrint(1,p2->seqNo, p2->size,2);
-					if (bytesSent != sizeof(packet))
-					{ printf("Error while sending the message channel 2");
-						exit(0);
+						int bytesSent = send (socket2, badSerialize(p2), sizeof(packet), 0);
+						pcktPrint(1,p2->seqNo, p2->size,2);
+						if (bytesSent != sizeof(packet))
+						{ printf("Error while sending the message channel 2");
+							exit(0);
+						}						
 					}
 					// printf ("Data Sent\n");
 
