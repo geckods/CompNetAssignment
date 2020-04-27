@@ -3,6 +3,7 @@
 
 int main(int argc, char* argv[]){
 
+	// get filename
 	char* fileName = "input.txt";
 	if(argc>2){
 		perror("Expected one or less command line argument, got more.");
@@ -26,16 +27,17 @@ int main(int argc, char* argv[]){
 	fileOffset=0;
 
 
-// TESTING getNextBlock
-	// char myBuffer[PACKET_SIZE+1];
-	// int done=0;
-	// while(!done){
-	// 	getNextBlock(myFile, myBuffer, &done);
-	// 	puts(myBuffer);
-	// 	printf("\n\n\n%d %d %lu\n\n\n\n", fileOffset, done, strlen(myBuffer));
-	// }
-	// return 0;
-
+// CODE FOR TESTING getNextBlock
+/*
+	char myBuffer[PACKET_SIZE+1];
+	int done=0;
+	while(!done){
+		getNextBlock(myFile, myBuffer, &done);
+		puts(myBuffer);
+		printf("\n\n\n%d %d %lu\n\n\n\n", fileOffset, done, strlen(myBuffer));
+	}
+	return 0;
+*/
 
 	// Setup and connext sockets
 	int socket1 = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -93,6 +95,7 @@ int main(int argc, char* argv[]){
 	TimeVal olderSendTime;
 	retransmissionTime.tv_sec=RETRANSMISSION_TIME_SEC;
 	retransmissionTime.tv_usec=RETRANSMISSION_TIME_USEC;
+
 	int oneIsOlder = 1;
 	sendTime1.tv_sec=sendTime2.tv_sec=INT_MAX;
 
@@ -101,7 +104,10 @@ int main(int argc, char* argv[]){
 	packet *p1=NULL,*p2=NULL;
 
 	int done=0;
+	int oneIsDone=0;
+	int twoIsDone=0;
 	int sentLastPacket=0;
+
 	while(!done){
 		// set up the select wait time
 		gettimeofday(&currTime, NULL);
@@ -112,11 +118,9 @@ int main(int argc, char* argv[]){
 			olderSendTime=sendTime2;
 		}
 
-		// fprintf(stderr, "SENDTIME:%ld %ld\n",olderSendTime.tv_sec,olderSendTime.tv_usec);
-		// fprintf(stderr, "CURRTIME:%ld %ld\n",currTime.tv_sec,currTime.tv_usec);
 
+		// calculate the wait time based on the older send
 		if(olderSendTime.tv_sec==INT_MAX || isOlder(olderSendTime, time_diff(currTime,retransmissionTime))){
-			// fprintf(stderr, "MESSED_UP\n");
 			waitTime.tv_sec=0;
 			waitTime.tv_usec=0;
 		}
@@ -136,6 +140,7 @@ int main(int argc, char* argv[]){
 				}
 				sentLastPacket=p1->lastPacket;
 
+				// retransmit
 				int bytesSent = send (socket1, badSerialize(p1), sizeof(packet), 0);
 				pcktPrint(1,p1->seqNo, p1->size,1);
 
@@ -143,10 +148,6 @@ int main(int argc, char* argv[]){
 				{ printf("Error while sending the message channel 1");
 					exit(0);
 				}
-				// printf ("Data Sent\n");
-
-
-				// fprintf(stderr, "HIHI1");
 
 				gettimeofday(&sendTime1,NULL);
 				oneIsOlder=0;
@@ -158,13 +159,13 @@ int main(int argc, char* argv[]){
 				}
 				sentLastPacket=p2->lastPacket;
 
+				// retansmit
 				int bytesSent = send (socket2, badSerialize(p2), sizeof(packet), 0);
 				pcktPrint(1,p2->seqNo, p2->size,2);
 				if (bytesSent != sizeof(packet))
 				{ printf("Error while sending the message channel 2");
 					exit(0);
 				}
-				// printf ("Data Sent\n");
 
 				gettimeofday(&sendTime2,NULL);
 				oneIsOlder=1;
@@ -175,21 +176,19 @@ int main(int argc, char* argv[]){
 				// GOT ACK ON 1
 				char recvBuffer[BUFSIZE+1];
 				int bytesRecvd = recv (socket1, recvBuffer, BUFSIZE, 0);
-				if (bytesRecvd < 0)
-				{ printf ("Error while receiving data from server");
-					exit (0);
+				if (bytesRecvd <= 0)
+				{ printf ("Server Disconnected\n");
+					break;
 				}
 				recvBuffer[bytesRecvd] = '\0';
-
-
 
 				packet *ackPacket = badUnSerialize(recvBuffer);
 				ackPrint(0,ackPacket->seqNo,1);
 				if(ackPacket->ack && ackPacket->seqNo==p1->seqNo){
-
-					if(ackPacket->lastPacket)break;
+					// correct ACK Packet
 
 					if(!sentLastPacket){
+						// only generate and send if you haven't hit the end of the file 
 						p1=getNextPacket(myFile,1);
 						sentLastPacket=p1->lastPacket;
 
@@ -200,8 +199,9 @@ int main(int argc, char* argv[]){
 							exit(0);
 						}						
 					}
-					// printf ("Data Sent\n");
-
+					else{
+						oneIsDone=1;
+					}
 					gettimeofday(&sendTime1, NULL);
 					oneIsOlder = 0;
 				}
@@ -210,13 +210,12 @@ int main(int argc, char* argv[]){
 				}
 			}
 			if (FD_ISSET(socket2, &readfds)){
-				// fprintf(stderr, "HIHIHI");
 				// GOT ACK ON 2
 				char recvBuffer[BUFSIZE+1];
 				int bytesRecvd = recv (socket2, recvBuffer, BUFSIZE, 0);
-				if (bytesRecvd < 0)
-				{ printf ("Error while receiving data from server");
-					exit (0);
+				if (bytesRecvd <= 0)
+				{ printf ("Server Disconnected\n");
+					break;
 				}
 				recvBuffer[bytesRecvd] = '\0';
 
@@ -225,10 +224,10 @@ int main(int argc, char* argv[]){
 				ackPrint(0,ackPacket->seqNo,2);
 
 				if(ackPacket->ack && ackPacket->seqNo==p2->seqNo){
-
-					if(ackPacket->lastPacket)break;
+					// correct ACK
 
 					if(!sentLastPacket){
+						// only generate and send if you haven't hit the end of the file 
 						p2=getNextPacket(myFile,2);
 						sentLastPacket=p2->lastPacket;
 
@@ -239,7 +238,9 @@ int main(int argc, char* argv[]){
 							exit(0);
 						}						
 					}
-					// printf ("Data Sent\n");
+					else{
+						twoIsDone=1;
+					}
 
 					gettimeofday(&sendTime2, NULL);
 					oneIsOlder = 1;
@@ -249,6 +250,8 @@ int main(int argc, char* argv[]){
 				}
 			}
 		}
+
+		done=oneIsDone&twoIsDone;
 
 		FD_ZERO(&readfds);
 		FD_SET(socket1, &readfds);
