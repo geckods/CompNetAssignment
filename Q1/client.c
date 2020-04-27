@@ -253,11 +253,14 @@ int main(int argc, char* argv[]){
 
 		done=oneIsDone&twoIsDone;
 
+		// restore FD sets
 		FD_ZERO(&readfds);
 		FD_SET(socket1, &readfds);
 		FD_SET(socket2, &readfds);
 	}
 
+	// wrapping up
+	fclose(myFile);
 	close(socket1);
 	close(socket2);
 }

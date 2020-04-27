@@ -25,7 +25,7 @@
 #define PORT2 12346
 
 // packet drop rate (percentage)
-#define PDR 20
+#define PDR 10
 
 // timeout values
 #define RETRANSMISSION_TIME_SEC 2
