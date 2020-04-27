@@ -1,5 +1,5 @@
-#include "q2_data.h"
-#include "q2_functions.c"
+#include "data.h"
+#include "functions.c"
 
 int main(){
 	// RELAY2 should receive from client, add possible delay, possible packet drop, and transmit to server
