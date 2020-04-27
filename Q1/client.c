@@ -1,5 +1,5 @@
-#include <q1_data.h>
-#include <q1_functions.c>
+#include <data.h>
+#include <functions.c>
 
 int main(int argc, char* argv[]){
 
