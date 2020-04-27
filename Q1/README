@@ -1,0 +1,17 @@
+README - Question 1
+
+FILES:
+client.c
+server.c
+data.h (contains packet definition, as well as many #define parameters)
+functions.c (contains many auxillary functions used by the programs)
+
+RUNNING INSTURCTIONS:
+gcc -o server server.c
+gcc -o client client.c
+
+Then, in 2 different terminal windows, run the two generated exeutables
+Run server first, followed  client
+Client and Server will accept a single command-line argument which is the input/output filename respectively. If not provided, client will use "input.txt" and server will use "output.txt"
+
+For unknown reasons, if the server is re-run very soon after a previous instance was terminated, you may receive an "Error while binding". This should go away by itself in a minute or so.
