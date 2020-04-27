@@ -7,6 +7,9 @@ int main(){
 
 	int clientSocket, serverSocket;
 
+	srand(time(0));
+	
+
     struct sockaddr_in si_me_client, si_client, si_me_server, si_server;
     int si_me_client_len, si_client_len, si_me_server_len, si_server_len;
     si_me_client_len= si_client_len= si_me_server_len= si_server_len=sizeof(struct sockaddr_in);
@@ -83,11 +86,12 @@ int main(){
 	    	sleepTime.tv_usec=rand()%MAXDELAY;
 	    	select(0, NULL, NULL, NULL, &sleepTime);
 
-
-	        if (sendto(serverSocket, buffer, recv_len, 0, (struct sockaddr*) &si_server, si_server_len) == -1)
-	        {
-	            die("sendto()");
-	        }
+	    	if(!dropPacket()){
+		        if (sendto(serverSocket, buffer, recv_len, 0, (struct sockaddr*) &si_server, si_server_len) == -1)
+		        {
+		            die("sendto()");
+		        }	    		
+	    	}
 	    }
 
 

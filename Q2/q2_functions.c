@@ -77,3 +77,7 @@ packet *getAckPacket(packet* iPacket){
 	thePacket->data[0]=0;
 	return thePacket;
 }
+
+int dropPacket(){
+	return rand()<((RAND_MAX)*(((double)PDR)/100));
+}

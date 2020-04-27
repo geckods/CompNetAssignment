@@ -19,8 +19,9 @@
 
 #define PACKET_SIZE 100
 #define WINDOWSIZE 10
-#define MAXDELAY 900000
+#define MAXDELAY 2000
 // in microseconds
+#define PDR 10
 typedef long long ll;
 
 int BUFSIZE = PACKET_SIZE + 24;
