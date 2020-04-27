@@ -57,15 +57,18 @@ int main(int argc, char* argv[]){
 
     int lastPacketSeq=INT_MAX;
     while(1)
-    {         
-
+    {
+    	// fprintf(stderr, "%d %d\n",lastPacketSeq, basePointer );
     	while(inBuffer[basePointer%WINDOWSIZE]){
     		fwrite(bufferArr[basePointer%WINDOWSIZE], sizeof(char), strlen(bufferArr[basePointer%WINDOWSIZE]), myFile);
-    		if(basePointer>lastPacketSeq)break;
+    		if(basePointer>=lastPacketSeq)break;
     		inBuffer[basePointer%WINDOWSIZE]=0;
     		basePointer++;
     	}
-    	if(basePointer>lastPacketSeq)break;
+    	if(basePointer>=lastPacketSeq)break;
+
+    	// fprintf(stderr, "%d %d\n",lastPacketSeq, basePointer );
+
 
         //try to receive some data, this is a blocking call
         sr=sizeof(si_relay);
@@ -73,15 +76,14 @@ int main(int argc, char* argv[]){
         {
             die("recvfrom()");
         }
-        
 
-        // TODO - either buffer the packet, or ack it
 
         packet * newPacket = badUnSerialize(buf);
         
+        loggerMessage(SERVER, RECV, get_current_time(), DATA, newPacket->seqNo, (newPacket->channelID==1)?RELAY1:RELAY2, SERVER);
         int theSeqNum=newPacket->seqNo/PACKET_SIZE;
 
-		if(theSeqNum<basePointer)continue;        
+		if(theSeqNum<basePointer)continue;
 
         newPacket->data[newPacket->size]=0;
 
@@ -92,8 +94,8 @@ int main(int argc, char* argv[]){
         inBuffer[theSeqNum%WINDOWSIZE]=1;
         strcpy(bufferArr[theSeqNum%WINDOWSIZE],newPacket->data);
         bufferArr[theSeqNum%WINDOWSIZE][newPacket->size]=0;
-        fprintf(stderr,"Received packet from %s:%d\n", inet_ntoa(si_relay.sin_addr), ntohs(si_relay.sin_port));
-        fprintf(stderr,"seqNo: %d, size %d, isLast %d\n",newPacket->seqNo, newPacket->size, newPacket->lastPacket);
+        // fprintf(stderr,"Received packet from %s:%d\n", inet_ntoa(si_relay.sin_addr), ntohs(si_relay.sin_port));
+        // fprintf(stderr,"seqNo: %d, size %d, isLast %d\n",newPacket->seqNo, newPacket->size, newPacket->lastPacket);
 
         packet * ackPacket = getAckPacket(newPacket);
 
@@ -101,6 +103,8 @@ int main(int argc, char* argv[]){
         {
             die("sendto()");
         }
+        loggerMessage(SERVER, SEND, get_current_time(), ACK, ackPacket->seqNo, (ackPacket->channelID==1)?RELAY1:RELAY2, SERVER);
+
 
     }
     fclose(myFile);

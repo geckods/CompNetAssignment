@@ -2,13 +2,12 @@
 #include "q2_functions.c"
 
 int main(){
-	// relay1 should receive from client, add possible delay, possible packet drop, and transmit to server
+	// RELAY2 should receive from client, add possible delay, possible packet drop, and transmit to server
 	// it should also receive acks from server and simply send them to client
 
 	int clientSocket, serverSocket;
 
 	srand(time(0));
-	
 
     struct sockaddr_in si_me_client, si_client, si_me_server, si_server;
     int si_me_client_len, si_client_len, si_me_server_len, si_server_len;
@@ -54,7 +53,6 @@ int main(){
     TimeVal sleepTime;
     sleepTime.tv_sec=0;
 
-
     int recv_len, send_len;
 
     while(1){
@@ -65,11 +63,12 @@ int main(){
 	    FD_ZERO(&readfds);
 	    FD_SET(clientSocket, &readfds);
 	    FD_SET(serverSocket, &readfds);
-	    timeoutTime.tv_sec=100;
+	    timeoutTime.tv_sec=RELAYTIMEOUT;
 	    timeoutTime.tv_usec=0;
 
 	    if(select(myNfds,&readfds,NULL,NULL,&timeoutTime)==0){
-	    	fprintf(stderr, "TIMED OUT!\n");
+	    	loggerMessage(RELAY2, TIMEOUT, get_current_time(), ACK, -1, RELAY2, RELAY2);
+	    	// fprintf(stderr, "TIMED OUT!\n");
 	    	return 0;
 	    }
 
@@ -86,13 +85,26 @@ int main(){
 	    	sleepTime.tv_usec=rand()%MAXDELAY;
 	    	select(0, NULL, NULL, NULL, &sleepTime);
 
-	    	if(!dropPacket()){
+	        // printf("Received packet from %s:%d\n", inet_ntoa(si_client.sin_addr), ntohs(si_client.sin_port));
+	        // printf("SeqNo: %d\n" , badUnSerialize(buffer)->seqNo);
+	    	loggerMessage(RELAY2, RECV, get_current_time(), DATA, badUnSerialize(buffer)->seqNo, CLIENT, RELAY2);
+
+
+	        if(!dropPacket()){
 		        if (sendto(serverSocket, buffer, recv_len, 0, (struct sockaddr*) &si_server, si_server_len) == -1)
 		        {
 		            die("sendto()");
-		        }	    		
-	    	}
+		        }	        	
+		    	loggerMessage(RELAY2, SEND, get_current_time(), DATA, badUnSerialize(buffer)->seqNo, RELAY2, SERVER);
+	        }
+	        else{
+		    	loggerMessage(RELAY2, DROP, get_current_time(), DATA, badUnSerialize(buffer)->seqNo, RELAY2, RELAY2);
+	        	// fprintf(stderr,"DROPPED PACKET!!!!!!!!!!!!!!!\n");
+	        }
 	    }
+
+    	si_server_len=sizeof(si_server);
+    	si_client_len=sizeof(si_client);
 
 
 	    if(FD_ISSET(serverSocket, &readfds)){
@@ -106,12 +118,16 @@ int main(){
 	    	if(!(ntohs(si_server.sin_port)==SERVER_PORT)){
 	    		continue;
 	    	}
-
+	        // printf("Received packet from %s:%d\n", inet_ntoa(si_server.sin_addr), ntohs(si_server.sin_port));
+	        // printf("IsAck: %d\n" , badUnSerialize(buffer)->ack);
+	    	loggerMessage(RELAY2, RECV, get_current_time(), ACK, badUnSerialize(buffer)->seqNo, SERVER, RELAY2);
 
 	        if (sendto(serverSocket, buffer, recv_len, 0, (struct sockaddr*) &si_client, si_client_len) == -1)
 	        {
 	            die("sendto()");
 	        }
+	    	loggerMessage(RELAY2, SEND, get_current_time(), ACK, badUnSerialize(buffer)->seqNo, RELAY2,CLIENT);
+
 
 	    }
 

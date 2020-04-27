@@ -15,14 +15,27 @@
 #ifndef Q2DATA_H
 #define Q2DATA_H
 
-// NOTE THAT IF THE 
 
 #define PACKET_SIZE 100
 #define WINDOWSIZE 10
-#define MAXDELAY 2000
+#define MAXDELAY 200000
 // in microseconds
-#define PDR 10
+#define RELAYTIMEOUT 10
+// in seconds
+#define PDR 30
 typedef long long ll;
+
+enum NODENAME{
+	CLIENT,SERVER,RELAY1,RELAY2
+};
+
+enum EVENTTYPE{
+	SEND,RECV,DROP,TIMEOUT,RETRANS
+};
+
+enum PACKETTYPE{
+	DATA,ACK
+};
 
 int BUFSIZE = PACKET_SIZE + 24;
 
@@ -52,4 +65,7 @@ int fileOffset=0;
 int fileSize;
 
 typedef struct timeval TimeVal;
+
+
+
 #endif

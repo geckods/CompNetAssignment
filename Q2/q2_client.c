@@ -35,7 +35,7 @@ int main(int argc, char* argv[]){
 	for(int i=0;i<WINDOWSIZE;i++){
 		sendTime[i].tv_sec=INT_MAX;
 		sendTime[i].tv_usec=INT_MAX;
-		isAcked[i]=0;
+		isAcked[i]=1;
 	}
 
 	int fileDone=0;
@@ -85,6 +85,19 @@ int main(int argc, char* argv[]){
 	int myNfds=max(socket_relay1,socket_relay2)+1;
 
 	while(1){
+
+		int done=0;
+		if(fileDone){
+			done=1;
+			for(int i=0;i<WINDOWSIZE;i++){
+				if(!isAcked[i]){
+					done=0;
+					break;
+				}
+			}
+			if(done)break;
+		}
+
 	    memset((char *) &si_relay1, 0, sizeof(si_relay1));
 	    si_relay1.sin_family = AF_INET;
 	    si_relay1.sin_port = htons(R1_PORT);
@@ -110,6 +123,7 @@ int main(int argc, char* argv[]){
 		        {
 		            die("sendto()");
 		        }
+		        loggerMessage(CLIENT, SEND, get_current_time(), DATA, inWindow[windowPointer%WINDOWSIZE]->seqNo, CLIENT, RELAY1);
 			}
 			else{
 				inWindow[windowPointer%WINDOWSIZE]=getNextPacket(myFile,2);
@@ -118,6 +132,7 @@ int main(int argc, char* argv[]){
 		        {
 		            die("sendto()");
 		        }				
+		        loggerMessage(CLIENT, SEND, get_current_time(), DATA, inWindow[windowPointer%WINDOWSIZE]->seqNo, CLIENT, RELAY2);
 			}
 
 			if(inWindow[windowPointer%WINDOWSIZE]->lastPacket)fileDone=1;
@@ -144,6 +159,8 @@ int main(int argc, char* argv[]){
 
 		int selectReturn = select(myNfds, &readfds, NULL, NULL, &waitTime);
 		if(selectReturn==0){
+	        loggerMessage(CLIENT, TIMEOUT, get_current_time(), ACK, -1, CLIENT, CLIENT);
+
 			// timeout - retransmit
 			if(currOldestTimer%2==0){
 				//send the message
@@ -151,6 +168,7 @@ int main(int argc, char* argv[]){
 		        {
 		            die("sendto()");
 		        }
+		        loggerMessage(CLIENT, RETRANS, get_current_time(), DATA, inWindow[windowPointer%WINDOWSIZE]->seqNo, CLIENT, RELAY1);
 			}
 			else{
 				//send the message
@@ -158,6 +176,7 @@ int main(int argc, char* argv[]){
 		        {
 		            die("sendto()");
 		        }				
+		        loggerMessage(CLIENT, RETRANS, get_current_time(), DATA, inWindow[windowPointer%WINDOWSIZE]->seqNo, CLIENT, RELAY2);
 			}
 	        gettimeofday(&sendTime[currOldestTimer%WINDOWSIZE], NULL);
 
@@ -181,12 +200,14 @@ int main(int argc, char* argv[]){
 		            die("recvfrom()");
 		        }
 
+
 		        packet* tempPacket = badUnSerialize(buf);
+		        loggerMessage(CLIENT, RECV, get_current_time(), ACK, tempPacket->seqNo, RELAY1, CLIENT);
 		        if(!tempPacket->ack){
 		        	die("dead");
 		        }
 
-		        if(tempPacket->lastPacket)break;
+		        // if(tempPacket->lastPacket)break;
 
 		        int hasBeenAcked=(tempPacket->seqNo/PACKET_SIZE);
 
@@ -218,11 +239,13 @@ int main(int argc, char* argv[]){
 		        }
 
 		        packet* tempPacket = badUnSerialize(buf);
+		        loggerMessage(CLIENT, RECV, get_current_time(), ACK, tempPacket->seqNo, RELAY2, CLIENT);
+
 		        if(!tempPacket->ack){
 		        	die("dead");
 		        }
 
-		        if(tempPacket->lastPacket)break;
+		        // if(tempPacket->lastPacket)break;
 		        int hasBeenAcked=(tempPacket->seqNo/PACKET_SIZE);
 
 		        // fprintf(stderr, "GOT ACK:%d\n", hasBeenAcked);
