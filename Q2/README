@@ -1,0 +1,21 @@
+README
+
+FILES:
+client.c
+server.c
+relay1.c
+relay2.c
+data.h (contains packet definition, as well as many #define parameters)
+functions.c (contains many auxillary functions used by the programs)
+
+RUNNING INSTURCTIONS:
+gcc -o server server.c
+gcc -o client client.c
+gcc -o relay1 relay1.c
+gcc -o relay2 relay2.c
+
+Then, in 4 different terminal windows, run the four generated exeutables
+Run server first, followed by relay1 and relay2, and then finally client
+Note that relay1 and relay2 will timeout and exit if client does not send a message within 10 seconds (hash defined timer in data.h, can be changed)
+Client and Server will accept a single command-line argument which is the input/output filename respectively. If not provided, client will use "input.txt" and server will use "output.txt"
+
