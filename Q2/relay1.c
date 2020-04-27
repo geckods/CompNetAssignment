@@ -68,7 +68,6 @@ int main(){
 
 	    if(select(myNfds,&readfds,NULL,NULL,&timeoutTime)==0){
 	    	loggerMessage(RELAY1, TIMEOUT, get_current_time(), ACK, -1, RELAY1, RELAY1);
-	    	// fprintf(stderr, "TIMED OUT!\n");
 	    	return 0;
 	    }
 
@@ -81,12 +80,10 @@ int main(){
 	    	}
 	    	buffer[recv_len]=0;
 
-	    	// TODO: add delay, packet drops
+	    	// DELAY
 	    	sleepTime.tv_usec=rand()%MAXDELAY;
 	    	select(0, NULL, NULL, NULL, &sleepTime);
 
-	        // printf("Received packet from %s:%d\n", inet_ntoa(si_client.sin_addr), ntohs(si_client.sin_port));
-	        // printf("SeqNo: %d\n" , badUnSerialize(buffer)->seqNo);
 	    	loggerMessage(RELAY1, RECV, get_current_time(), DATA, badUnSerialize(buffer)->seqNo, CLIENT, RELAY1);
 
 
@@ -98,8 +95,8 @@ int main(){
 		    	loggerMessage(RELAY1, SEND, get_current_time(), DATA, badUnSerialize(buffer)->seqNo, RELAY1, SERVER);
 	        }
 	        else{
+	        	// PACKET DROP
 		    	loggerMessage(RELAY1, DROP, get_current_time(), DATA, badUnSerialize(buffer)->seqNo, RELAY1, RELAY1);
-	        	// fprintf(stderr,"DROPPED PACKET!!!!!!!!!!!!!!!\n");
 	        }
 	    }
 
@@ -118,8 +115,6 @@ int main(){
 	    	if(!(ntohs(si_server.sin_port)==SERVER_PORT)){
 	    		continue;
 	    	}
-	        // printf("Received packet from %s:%d\n", inet_ntoa(si_server.sin_addr), ntohs(si_server.sin_port));
-	        // printf("IsAck: %d\n" , badUnSerialize(buffer)->ack);
 	    	loggerMessage(RELAY1, RECV, get_current_time(), ACK, badUnSerialize(buffer)->seqNo, SERVER, RELAY1);
 
 	        if (sendto(serverSocket, buffer, recv_len, 0, (struct sockaddr*) &si_client, si_client_len) == -1)
@@ -127,9 +122,9 @@ int main(){
 	            die("sendto()");
 	        }
 	    	loggerMessage(RELAY1, SEND, get_current_time(), ACK, badUnSerialize(buffer)->seqNo, RELAY1,CLIENT);
-
-
 	    }
-
     }
+    // WRAPPING UP
+    close(clientSocket);
+    close(serverSocket);
 }

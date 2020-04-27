@@ -58,7 +58,7 @@ int main(int argc, char* argv[]){
     int lastPacketSeq=INT_MAX;
     while(1)
     {
-    	// fprintf(stderr, "%d %d\n",lastPacketSeq, basePointer );
+        // if you can, write from buffer to file
     	while(inBuffer[basePointer%WINDOWSIZE]){
     		fwrite(bufferArr[basePointer%WINDOWSIZE], sizeof(char), strlen(bufferArr[basePointer%WINDOWSIZE]), myFile);
     		if(basePointer>=lastPacketSeq)break;
@@ -67,11 +67,9 @@ int main(int argc, char* argv[]){
     	}
     	if(basePointer>=lastPacketSeq)break;
 
-    	// fprintf(stderr, "%d %d\n",lastPacketSeq, basePointer );
 
-
-        //try to receive some data, this is a blocking call
         sr=sizeof(si_relay);
+        //try to receive some data, this is a blocking call
         if ((recv_len = recvfrom(socket_relay, buf, BUFSIZE, 0, (struct sockaddr *) &si_relay, &sr)) == -1)
         {
             die("recvfrom()");
@@ -92,13 +90,14 @@ int main(int argc, char* argv[]){
         }
 
         inBuffer[theSeqNum%WINDOWSIZE]=1;
+
+        // move the data to the buffer for now
         strcpy(bufferArr[theSeqNum%WINDOWSIZE],newPacket->data);
         bufferArr[theSeqNum%WINDOWSIZE][newPacket->size]=0;
-        // fprintf(stderr,"Received packet from %s:%d\n", inet_ntoa(si_relay.sin_addr), ntohs(si_relay.sin_port));
-        // fprintf(stderr,"seqNo: %d, size %d, isLast %d\n",newPacket->seqNo, newPacket->size, newPacket->lastPacket);
 
         packet * ackPacket = getAckPacket(newPacket);
 
+        // send ACK
         if (sendto(socket_relay, badSerialize(ackPacket), BUFSIZE, 0, (struct sockaddr*) &si_relay, sr) == -1)
         {
             die("sendto()");

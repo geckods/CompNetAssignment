@@ -46,7 +46,6 @@ int getNextBlock(FILE* inputFile, char* buffer, int *isFinalBlock){
 	int readSize = fread(buffer, sizeof(char),PACKET_SIZE, inputFile);
 	buffer[readSize]='\0';
 	*isFinalBlock=0;
-	// fread(void *restrict __ptr, size_t __size, size_t __n, FILE *restrict __stream)
 	if(feof(inputFile) || ftell(inputFile) == fileSize)*isFinalBlock=1;
 	int toReturn=fileOffset;
 	fileOffset+=readSize;
@@ -54,16 +53,11 @@ int getNextBlock(FILE* inputFile, char* buffer, int *isFinalBlock){
 }
 
 packet *getNextPacket(FILE* inputFile, int channelID){
-	// returns isFinalPacket?
-
-
 	packet* thePacket = malloc(sizeof(packet));
 	thePacket->channelID = channelID;
 	thePacket->seqNo = getNextBlock(inputFile, thePacket->data, &thePacket->lastPacket);
 	thePacket->size = strlen(thePacket->data);
 	thePacket->ack = 0;
-	// fprintf(stderr, "%d %d\n",thePacket->size, thePacket->seqNo);
-	// fprintf(stderr, "%s\n",thePacket->data);
 	return thePacket;
 }
 

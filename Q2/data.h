@@ -15,14 +15,25 @@
 #ifndef Q2DATA_H
 #define Q2DATA_H
 
-
+// length of char packets
 #define PACKET_SIZE 100
+
+// window for selective repeat
 #define WINDOWSIZE 10
-#define MAXDELAY 200000
-// in microseconds
+
+// in microseconds, delay added by relayes 
+#define MAXDELAY 2000
+
+// in seconds, time taken without message for relays to terminate
 #define RELAYTIMEOUT 10
-// in seconds
+
+// percentage chance of packet drop
 #define PDR 30
+
+// timeout for client
+#define RETRANSMISSION_TIME_SEC 2
+#define RETRANSMISSION_TIME_USEC 0
+
 typedef long long ll;
 
 enum NODENAME{
@@ -37,6 +48,7 @@ enum PACKETTYPE{
 	DATA,ACK
 };
 
+// to accomodate ints
 int BUFSIZE = PACKET_SIZE + 24;
 
 typedef struct {
@@ -58,14 +70,10 @@ typedef struct {
 #define R2_PORT 12346
 #define SERVER_PORT 12347
 
-#define RETRANSMISSION_TIME_SEC 2
-#define RETRANSMISSION_TIME_USEC 0
 
 int fileOffset=0;
 int fileSize;
 
 typedef struct timeval TimeVal;
-
-
 
 #endif

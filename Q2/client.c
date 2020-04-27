@@ -3,6 +3,7 @@
 
 int main(int argc, char* argv[]){
 
+	// get filename
 	char* fileName = "input.txt";
 	if(argc>2){
 		perror("Expected one or less command line argument, got more.");
@@ -28,6 +29,7 @@ int main(int argc, char* argv[]){
 	int send_base=0;
 	int windowPointer=0;
 
+	// initialize window
 	TimeVal sendTime[WINDOWSIZE];
 	int isAcked[WINDOWSIZE];
 	packet* inWindow[WINDOWSIZE];
@@ -46,8 +48,8 @@ int main(int argc, char* argv[]){
     sr2=sizeof(si_relay2);
     
     char buf[BUFSIZE+1];
-    char message[PACKET_SIZE+1];
  
+ 	// connect sockets
     if ((socket_relay1=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
 	{
         die("socket");
@@ -60,15 +62,6 @@ int main(int argc, char* argv[]){
     }
  
 
-    memset((char *) &si_relay1, 0, sizeof(si_relay1));
-    si_relay1.sin_family = AF_INET;
-    si_relay1.sin_port = htons(R1_PORT);
-    si_relay1.sin_addr.s_addr = inet_addr(RELAY1_IP);
-
-    memset((char *) &si_relay2, 0, sizeof(si_relay2));
-    si_relay2.sin_family = AF_INET;
-    si_relay2.sin_port = htons(R2_PORT);
-    si_relay2.sin_addr.s_addr = inet_addr(RELAY2_IP);
 
 
 	TimeVal waitTime;
@@ -86,6 +79,7 @@ int main(int argc, char* argv[]){
 
 	while(1){
 
+		// check if the file has been sent and all packets have been acked
 		int done=0;
 		if(fileDone){
 			done=1;
@@ -98,6 +92,7 @@ int main(int argc, char* argv[]){
 			if(done)break;
 		}
 
+	    // setup relay ports
 	    memset((char *) &si_relay1, 0, sizeof(si_relay1));
 	    si_relay1.sin_family = AF_INET;
 	    si_relay1.sin_port = htons(R1_PORT);
@@ -109,16 +104,17 @@ int main(int argc, char* argv[]){
 	    si_relay2.sin_addr.s_addr = inet_addr(RELAY2_IP);
 
 		sr1=sr2=sizeof(si_relay1);
+
 		if(!fileDone && windowPointer-send_base < WINDOWSIZE){
 			// send next packet, set fileDone if need be
 			// ALSO update sendTime
 			// ALSO set isAcked to false
 			// ALSO put packet in inWindow
 
+			// which channel to send message on
 			if(windowPointer%2==0){
 				inWindow[windowPointer%WINDOWSIZE]=getNextPacket(myFile,1);
 				//send the message
-				// fprintf(stderr,"SENDING %d\n",inWindow[windowPointer%WINDOWSIZE]->seqNo);
 		        if (sendto(socket_relay1, badSerialize(inWindow[windowPointer%WINDOWSIZE]), BUFSIZE , 0 , (struct sockaddr *) &si_relay1, sr1)==-1)
 		        {
 		            die("sendto()");
@@ -135,6 +131,7 @@ int main(int argc, char* argv[]){
 		        loggerMessage(CLIENT, SEND, get_current_time(), DATA, inWindow[windowPointer%WINDOWSIZE]->seqNo, CLIENT, RELAY2);
 			}
 
+			// update window as required
 			if(inWindow[windowPointer%WINDOWSIZE]->lastPacket)fileDone=1;
 	        gettimeofday(&sendTime[windowPointer%WINDOWSIZE], NULL);
 	        isAcked[windowPointer%WINDOWSIZE]=0;
@@ -144,6 +141,7 @@ int main(int argc, char* argv[]){
 
 		gettimeofday(&currTime,NULL);
 
+		// get oldest timer
 		if(isOlder(sendTime[currOldestTimer], time_diff(currTime, retransmissionTime))){
 			waitTime.tv_sec=0;
 			waitTime.tv_usec=0;
@@ -156,7 +154,7 @@ int main(int argc, char* argv[]){
 		FD_ZERO(&readfds);
 		FD_SET(socket_relay1, &readfds);
 		FD_SET(socket_relay2, &readfds);
-
+		// waitTime is the oldest send
 		int selectReturn = select(myNfds, &readfds, NULL, NULL, &waitTime);
 		if(selectReturn==0){
 	        loggerMessage(CLIENT, TIMEOUT, get_current_time(), ACK, -1, CLIENT, CLIENT);
@@ -180,6 +178,7 @@ int main(int argc, char* argv[]){
 			}
 	        gettimeofday(&sendTime[currOldestTimer%WINDOWSIZE], NULL);
 
+	        // update timers
 	        TimeVal oldestTime;oldestTime.tv_sec=INT_MAX;
 	        for(int i=0;i<WINDOWSIZE;i++){
 	        	if(isAcked[i])continue;
@@ -191,7 +190,6 @@ int main(int argc, char* argv[]){
 
 		}
 		else{
-			// fprintf(stderr, "HIHIHI");
 
 			if(FD_ISSET(socket_relay1, &readfds)){
 				// got ack
@@ -207,14 +205,10 @@ int main(int argc, char* argv[]){
 		        	die("dead");
 		        }
 
-		        // if(tempPacket->lastPacket)break;
-
+		        // update Window
 		        int hasBeenAcked=(tempPacket->seqNo/PACKET_SIZE);
 
-		        // fprintf(stderr, "GOT ACK:%d , wp %d b %d\n", hasBeenAcked, windowPointer, send_base);
-
 		        isAcked[hasBeenAcked%WINDOWSIZE]=1;
-		        // if(send_base==hasBeenAcked)send_base++;
 		        while(send_base<windowPointer && isAcked[send_base%WINDOWSIZE])send_base++;
 
 		        if(hasBeenAcked%WINDOWSIZE==currOldestTimer){
@@ -245,11 +239,7 @@ int main(int argc, char* argv[]){
 		        	die("dead");
 		        }
 
-		        // if(tempPacket->lastPacket)break;
 		        int hasBeenAcked=(tempPacket->seqNo/PACKET_SIZE);
-
-		        // fprintf(stderr, "GOT ACK:%d\n", hasBeenAcked);
-
 
 		        isAcked[hasBeenAcked%WINDOWSIZE]=1;
 		        
@@ -269,4 +259,8 @@ int main(int argc, char* argv[]){
 			}
 		}
 	}
+	// wrapping up
+	fclose(myFile);
+	close(socket_relay1);
+	close(socket_relay2);
 }
