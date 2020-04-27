@@ -2,20 +2,39 @@
 // ABHINAV RAMACHANDRAN
 // Submitted on 27.4.20
 
-README - Question 1
+#README - Question 1
 
-FILES:
+#FILES:
 client.c
 server.c
 data.h (contains packet definition, as well as many #define parameters)
 functions.c (contains many auxillary functions used by the programs)
 
-RUNNING INSTURCTIONS:
+#RUNNING INSTURCTIONS:
 gcc -o server server.c
 gcc -o client client.c
 
 Then, in 2 different terminal windows, run the two generated exeutables
-Run server first, followed  client
+Run server (./server) first, followed client(./client).
 Client and Server will accept a single command-line argument which is the input/output filename respectively. If not provided, client will use "input.txt" and server will use "output.txt"
 
 For unknown reasons, if the server is re-run very soon after a previous instance was terminated, you may receive an "Error while binding". This should go away by itself in a minute or so.
+
+#IMPLEMENTATION DETAILS
+The client runs in a loop. It keeps track of which channel (1 or 2) was sent at an earlier time (since the earlier send will be the first timer to expire). Then select is called in the loop.
+
+The loop will go to one of two states:
+- TIMEOUT - in this case, a new packet will not be generated, but a previous packet will be retransmitted on the appropriate channel
+- ACK RECV - in this case, a new packet will be generated and sent on the appropriate channel
+
+(note that the first iteration of the loop is a special case, implemented as a TIMEOUT, but it will generate a new packet by reading the file)
+
+Each time a packet is sent on a channel, the current time is noted down.
+At the beginning of the loop, the time left (wrt the retransmission time) is computed and the select only waits for the required period. 
+
+Thus, by using two struct timevals (one for each channel) to keep track of the send times, I can simulate the behaviour exactly as if I was using two timers
+
+On the server side, the buffer is exactly one packet wide. Hence it only stores one packet received out of order. The server will drop all out of order packets if the buffer is full. For example, if packet 2 is dropped, packet 3 will get buffered and packet 4 onwards will be dropped, if they arrive before 2.
+
+All tweakable parameters have been consolidated in data.h for modularity.
+(Refer to the comments there for more details).

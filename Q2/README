@@ -3,9 +3,9 @@
 // Submitted on 27.4.20
 
 
-README - Question 2
+#README - Question 2
 
-FILES:
+#FILES:
 client.c
 server.c
 relay1.c
@@ -13,14 +13,40 @@ relay2.c
 data.h (contains packet definition, as well as many #define parameters)
 functions.c (contains many auxillary functions used by the programs)
 
-RUNNING INSTURCTIONS:
+#RUNNING INSTURCTIONS:
 gcc -o server server.c
 gcc -o client client.c
 gcc -o relay1 relay1.c
 gcc -o relay2 relay2.c
 
 Then, in 4 different terminal windows, run the four generated exeutables
-Run server first, followed by relay1 and relay2, and then finally client
-Note that relay1 and relay2 will timeout and exit if client does not send a message within 10 seconds (hash defined timer in data.h, can be changed)
+Run server(./server) first, followed by relay1(./relay1) and relay2(./relay2), and then finally client(./client).
+
+Note that relay1 and relay2 will timeout and exit if client does not send a message within 10 seconds (hash defined timer in data.h, can be changed).
+
 Client and Server will accept a single command-line argument which is the input/output filename respectively. If not provided, client will use "input.txt" and server will use "output.txt"
 
+#Implementation Details
+
+(similar to Figure 3.25 SR receiver events and actions in Computer Networking: A Top-Down Approach 7th edition)
+
+A WINDOW_SIZE is defined. 
+
+The sender follows a loop, as follows:
+	The sender sends all packets within one WINDOW_SIZE and waits designated time for ACKs.
+
+	If time runs out, the sender retransmits the earliest sent packet, and updates times accordingly.
+
+	If an ACK is received, the corresponding spot is marked as ACKed. If the ACK is on the lowest seqNo, then the base_pointer is incremented.
+
+Timers have been implemented similar to Q1, only this time utilizing an array of size WINDOW_SIZE. Thus the last sendTime of each packet in the window is tracked. This allows me to find out at any point in time what the oldest send is, and set the waiting time accordingly. Therefore, I simulate the behaviour of multiple timers by using only a single timer. (Refer to client.c, while loop ~ line 150 for details)
+
+Each relay node simply forwards data packets, after probabilistically dropping or adding delay. Relay nodes DO NOT delay or drop ack packets that come from the server to the client.
+
+On the server side, there is a buffer of WINDOW_SIZE. This ensures that the server's window will never be behind the client's window, so out of order packet must fit in the server's buffer. This allows easy handling of packets in the buffer. Modular arithmetic is employed to locate the appropriate slots in the buffer.
+
+All incoming data points are first stored in the buffer. An array (inBuffer) keeps track of which buffer slots are full. If inBuffer of the base pointer if set, then the continuous piece of buffer data starting from the base pointer can be moved to the file. This is checked at the beginning of each while iteration. This is also when the server's window is extended.
+
+Only three sockets are used - one for each relay, and one for the server. This simplifies the code.
+
+All tweakable parameters have been consolidated in data.h for modularity. (Refer to the comments there for more details).
