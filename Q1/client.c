@@ -2,8 +2,8 @@
 // ABHINAV RAMACHANDRAN
 // Submitted on 27.4.20
 
-#include <data.h>
-#include <functions.c>
+#include "data.h"
+#include "functions.c"
 
 int main(int argc, char* argv[]){
 
